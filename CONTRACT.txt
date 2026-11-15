@@ -1,0 +1,84 @@
+OVERGROW — SHARED CONTRACT (every module follows this exactly)
+
+GAME
+2D top-down auto-shooter roguelite for the browser, Vietnamese UI. Player = a small amber seed-spirit. Enemies = "Sương Độc" mold blobs that bloom into flowers when defeated, so the map fills with flowers where the player fought. A living skill tree grows from how the player plays (4 branches); two branches meeting create a synergy. One season (run) lasts up to 15:00; the final boss "mother" at 15:00 clears Act 1. Death or clear = Winter: roots (permanent currency) are gained, the tree sheds its leaves, the next season starts stronger. Daily Seed: same seed for everyone each day, shareable result text. Offline growth up to 8 h.
+
+TECH
+- Plain JavaScript, no build step, no ES modules, no libraries. Opens by double-clicking index.html (file://) and works on GitHub Pages.
+- Every JS file is wrapped: (function (OG) { ... })(window.OG = window.OG || {});
+- Script order in index.html: js/core.js, js/tree.js, js/world.js, js/meta.js, js/audio.js, js/render.js, js/treeview.js, js/ui.js, js/main.js
+- core.js loads first, so modules may call OG.game.addUpdate / addRender and OG.bus.on at load time. Nothing else runs at load time. js/main.js calls OG.boot().
+- Each module keeps its tunables at the top of its file in OG.cfg.<module> = {...}.
+- Node tests: tests/test_<module>.js, run with: node tests/test_<module>.js ; set globalThis.window = globalThis, load the module source with vm, stub only the APIs below that the module uses. Exit code 0 = pass.
+
+CORE API (js/core.js)
+OG.bus.on(name, fn) · OG.bus.off(name, fn) · OG.bus.emit(name, data)
+OG.game.state: 'title' | 'run' | 'levelup' | 'paused' | 'winter' ; OG.game.setState(s) emits state:change {from,to}
+OG.game.addUpdate(fn(dt), order) — every fixed tick, dt = 1/60 s, only while state === 'run'
+OG.game.addRender(fn(ctx, alpha, realDt), order) — every animation frame, in every state
+OG.boot() — creates canvas, input and loop, emits boot; idempotent
+OG.canvas, OG.ctx — <canvas id="game"> inside <div id="app">, sized to the window × devicePixelRatio (cap 2)
+OG.view = { w, h, dpr } in CSS pixels; emits resize {w,h,dpr}
+OG.input = { move:{x,y} (length ≤ 1), dash (true for one tick after a press), pressDash(), stick:{active,ox,oy,x,y} }
+  keyboard WASD/arrows, Space/Shift = dash, Esc/P = pause toggle; touch = floating joystick on the left 60% of the screen; mouse = hold left button to move toward the pointer. Pointers starting on elements with class .ui-block are ignored.
+OG.rng(seed) → function returning floats in [0,1) ; OG.hashSeed(string) → uint32 ; OG.rand = current run RNG
+OG.save.load() → object | null ; OG.save.write(obj) ; key 'overgrow.v1' ; never throws
+OG.fmt(n) → Vietnamese short number with comma decimals: 999 · 1,2 N · 3,45 Tr · 5,6 Tỷ · 7,8 NTỷ · 1,0 Rừng (1e15) · 1,0 Đại Ngàn (1e18) · 1,0 Thiên Hà (1e21)
+OG.fmtTime(sec) → "mm:ss" ; OG.clamp(v,a,b) ; OG.lerp(a,b,t) ; OG.dist2(ax,ay,bx,by)
+
+STATE (core creates OG.state with these empty shapes at load; owners reset their parts)
+OG.state = {
+ run:    { time, seed, daily, level, xp, xpNext, light, kills, rerolls, over, result: null|'death'|'clear' },
+ player: { x, y, vx, vy, r:14, hp, maxHp, invuln, dashCd, dashing, still, rooted },
+ enemies:     [ { id, kind, x, y, r, hp, maxHp, speed, dmg, hit, burn, slow } ],
+ projectiles: [ { x, y, vx, vy, r, dmg, pierce, kind:'seed', life } ],
+ hazards:     [ { x, y, vx, vy, r, dmg, life, telegraph } ],
+ orbits:      [ { x, y, r } ],
+ trails:      [ { x, y, r, life } ],
+ pickups:     [ { x, y, amount, kind:'xp'|'heal' } ],
+ stats: { see STATS },
+ tree: { growth:{fire,wind,root,stone}, skills:{id:rank}, synergies:{id:true}, order:[ {id, branch, kind:'skill'|'synergy', t} ] },
+ meta: { roots, rootsTotal, lifetimeLight, bestLpm, upgrades:{id:rank}, codex:{synergyId:true}, best:{time,level}, seasons, clears, lastSeen,
+         daily:{date, bestTime, bestLevel, played}, settings:{mute:false, volume:0.8, shake:true, colorblind:false, relax:false, hints:{move:false, tree:false}} }
+}
+Writers: world → player, enemies, projectiles, hazards, orbits, trails, pickups, run.time, run.kills, run.light · tree → stats, tree, run.level, run.xp, run.xpNext, run.rerolls · meta → meta, run.seed, run.daily, run.over, run.result, and player.hp/invuln only on revive.
+
+STATS (tree computes base ⊕ meta bonus ⊕ skills ⊕ synergies; world implements; 0 = feature off)
+dmg 10 · fireRate 1.6 shots/s · projSpeed 420 · projCount 1 · pierce 0 · spread 0.18 rad · moveSpeed 150 · maxHp 100 · armor 0 (flat reduction, min 1 dmg) · regen 0 hp/s · magnet 70 px · crit 0.05 · critMul 2 · dashCd 3 s · dashDist 120 · area 1 (multiplies effect radii) · orbitCount 0 · orbitDmg 0 · orbitRadius 60 · novaDmg 0 · novaCd 0 s · thorns 0 · rootSlow 0 (0–0.8, enemies within 90 px × area while player.still > 0.5 s) · chain 0 · burnDps 0 · trailDmg 0 per s · splitCount 0 · leech 0 (hp per xp orb) · xpMul 1 · lightMul 1 · choices 3
+
+ENEMY KINDS (world simulates, render draws)
+spore r8 fast weak · mold r13 standard · brute r24 slow tanky · spitter r12 keeps distance and shoots hazards · core r40 mini-boss at 3:00 6:00 9:00 12:00 (drops 3 heal pickups, grants 1 level) · mother r70 final boss at 15:00, phases at 66% and 33% hp, its death = Act 1 clear.
+World bounds: -2000..2000 on both axes.
+
+BRANCHES: fire 'Lửa' #E07A5F · wind 'Gió' #8FC1C9 · root 'Rễ' #A7C957 · stone 'Đá' #B8A99A
+
+BEHAVIOR TRACKING (world calls OG.tree.track(branch, amount) every tick)
+fire += seed damage dealt to enemies within 180 px of the player · wind += distance moved while any enemy is within 220 px · root += xp collected · stone += dt while player.still > 0.5 s, plus damage taken
+
+MODULE APIs
+tree: OG.tree.reset(bonus) · track(branch, n) · addXp(n) · grantLevel() · choose(skillId) · reroll() → bool · recompute() · skills [{id,branch,name,desc,maxRank}] · synergies [{id,name,desc,branches:[a,b],secret}]
+  bonus = { maxHp, dmgMul, moveMul, magnetMul, xpMul, lightMul, rerolls, choices, startLevel } (missing = neutral)
+world: OG.world.reset() · OG.world.update(dt) registered with addUpdate order 10
+meta: OG.meta.init() (on boot: load save, offline growth) · startRun({daily}) · endRun(result) · upgrades [{id,name,desc,maxRank}] · cost(id) → number|null · buy(id) → bool · shareText() · dailyNumber()
+render: OG.render.camera {x,y,zoom} · zoomOut(seconds, onDone) · bloomSnapshot() → canvas · worldToScreen(x,y) ; registered with addRender order 10
+treeview: OG.treeview.draw(ctx, x, y, w, h, {detail:'mini'|'full'}) · shed() · exportPNG() → dataURL (1080×1350 card)
+audio: OG.audio.unlock() · setMuted(b) · setVolume(v)
+ui: OG.ui.init() (on boot) · OG.ui.show(screen): title, hud, levelup, pause, settings, winter, roots, codex, offline, confirm
+
+EVENTS name {payload} [emitter]
+boot · resize {w,h,dpr} · state:change {from,to} · game:pause · game:resume [core]
+run:start {seed,daily} · run:end {result,time,level,kills,light,rootsGained} · winter:show · player:revive · offline:gain {seconds,light,rootsGained} · roots:change {roots} · settings:change {settings} [meta; ui also emits settings:change]
+player:shoot {x,y} · player:dash {x,y} · player:hurt {dmg,hp,maxHp} · player:dead · player:heal {amount} · enemy:hit {x,y,dmg,crit,kind} · enemy:die {x,y,kind} · flower:bloom {x,y,kind} · fx:nova {x,y,r} · boss:spawn {kind} · boss:dead {kind} · xp:pickup {amount,x,y} [world]
+level:up {level} · levelup:offer {options:[{id,name,desc,branch,rank,maxRank,isNew,synergyHint}]} · skill:gain {id,branch,rank} · synergy:found {id,name,desc,branches,first} · branch:grow {branch,total} [tree]
+ui:click · ui:hover [ui]
+
+FLOW
+boot → meta.init → ui title (offline dialog if offline:gain). Play → meta.startRun → world.reset, tree.reset(bonus), setState('run'), run:start.
+Level-up → tree emits levelup:offer and setState('levelup') → ui shows cards → ui calls tree.choose(id) → next queued offer or setState('run').
+player:dead (unless revived) or boss:dead {kind:'mother'} → meta.endRun → setState('winter') → render.zoomOut(3) → winter:show → ui winter screen.
+
+ART DIRECTION "storybook garden at dusk"
+Flat painted shapes with dark ink outlines, like a picture book. No gradients, no glow, no neon, no emoji in the UI. Palette: ground #2E3A2F · grass #5E7D4A · paper #F2E8D0 · ink #1F2420 · player amber #F4B942 · blight #7B6F8A with outline #3B3346 · plus the 4 branch colors. Fonts: 'Baloo 2' (titles, numbers) and 'Be Vietnam Pro' (text), self-hosted, Vietnamese subset. All player-facing text is Vietnamese.
+
+BALANCE TARGETS
+A level-up at least every 60 s · enemy hp ×2 every 90 s, dmg ×1.5 every 90 s · first season usually ends at 6–9 min · power rises in steps (synergy jumps ×1.5–×3) against the smooth enemy curve, so play alternates pressure and breakout · with roots a good build clears 15:00 after about 5–8 seasons.

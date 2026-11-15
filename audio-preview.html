@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OVERGROW - nghe thử âm thanh</title>
+<style>
+  body{margin:0;padding:16px;background:#2E3A2F;color:#F2E8D0;font:16px/1.4 'Be Vietnam Pro',system-ui,sans-serif}
+  h1{font-size:22px;margin:0 0 4px} p{margin:0 0 12px;opacity:.8}
+  .bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px}
+  button{min-height:44px;border:2px solid #1F2420;border-radius:10px;background:#F2E8D0;color:#1F2420;font:inherit;padding:6px 10px;cursor:pointer;touch-action:manipulation}
+  button:active{background:#F4B942} h2{font-size:15px;margin:14px 0 6px;color:#A7C957}
+  select,input{font:inherit}
+</style></head><body>
+<h1>OVERGROW - âm thanh</h1>
+<p>Bấm một nút để nghe. Nút đầu tiên cũng mở khóa âm thanh (iOS, Zalo).</p>
+<div class="bar">
+  <label>Âm lượng <input id="vol" type="range" min="0" max="1" step="0.05" value="0.8"></label>
+  <label><input id="mute" type="checkbox"> Tắt tiếng</label>
+  <label><input id="duck" type="checkbox"> Tạm dừng (giảm còn 30%)</label>
+</div>
+<div id="root"></div>
+<script>
+  // minimal OG stub: just what audio.js needs
+  (function () {
+    var h = {};
+    window.OG = { cfg: {}, state: { meta: { settings: { mute: false, volume: 0.8 } } },
+      bus: { on: function (n, f) { (h[n] = h[n] || []).push(f); }, off: function () {},
+             emit: function (n, d) { (h[n] || []).forEach(function (f) { f(d); }); } } };
+  })();
+</script>
+<script src="js/audio.js"></script>
+<script>
+  var root = document.getElementById('root');
+  var groups = [
+    ['Chiến đấu', [
+      ['Bắn hạt', 'player:shoot', {}], ['Trúng đòn', 'enemy:hit', { crit: false, kind: 'mold' }], ['Trúng đòn chí mạng', 'enemy:hit', { crit: true, kind: 'mold' }],
+      ['Địch nở hoa', 'enemy:die', { kind: 'mold' }], ['Lao nhanh', 'player:dash', {}], ['Sóng nova', 'fx:nova', {}], ['Bị thương', 'player:hurt', { dmg: 8 }]]],
+    ['Thu thập và lên cấp', [
+      ['Nhặt xp (bấm liên tục)', 'xp:pickup', { amount: 1 }], ['Lên cấp', 'level:up', { level: 2 }],
+      ['Kỹ năng Lửa', 'skill:gain', { branch: 'fire' }], ['Kỹ năng Gió', 'skill:gain', { branch: 'wind' }],
+      ['Kỹ năng Rễ', 'skill:gain', { branch: 'root' }], ['Kỹ năng Đá', 'skill:gain', { branch: 'stone' }]]],
+    ['Cộng hưởng', [
+      ['Lửa + Gió', 'synergy:found', { branches: ['fire', 'wind'], first: true }], ['Lửa + Rễ', 'synergy:found', { branches: ['fire', 'root'], first: true }],
+      ['Lửa + Đá', 'synergy:found', { branches: ['fire', 'stone'], first: true }], ['Gió + Rễ', 'synergy:found', { branches: ['wind', 'root'], first: true }],
+      ['Gió + Đá', 'synergy:found', { branches: ['wind', 'stone'], first: false }], ['Rễ + Đá', 'synergy:found', { branches: ['root', 'stone'], first: false }]]],
+    ['Boss và mùa', [
+      ['Lõi xuất hiện', 'boss:spawn', { kind: 'core' }], ['Mẹ xuất hiện', 'boss:spawn', { kind: 'mother' }],
+      ['Lõi gục', 'boss:dead', { kind: 'core' }], ['Mẹ gục', 'boss:dead', { kind: 'mother' }],
+      ['Hết mùa (chết)', 'run:end', { result: 'death' }], ['Hết mùa (thắng)', 'run:end', { result: 'clear' }], ['Hồi sinh', 'player:revive', {}]]],
+    ['Giao diện', [['Bấm', 'ui:click', {}], ['Rê chuột', 'ui:hover', {}]]]
+  ];
+  groups.forEach(function (gr) {
+    var h = document.createElement('h2'); h.textContent = gr[0]; root.appendChild(h);
+    var g = document.createElement('div'); g.className = 'grid'; root.appendChild(g);
+    gr[1].forEach(function (b) {
+      var el = document.createElement('button'); el.textContent = b[0];
+      el.addEventListener('click', function () {
+        OG.audio.unlock();
+        setTimeout(function () { OG.bus.emit(b[1], b[2]); }, 80);
+      });
+      g.appendChild(el);
+    });
+  });
+  var vol = document.getElementById('vol'), mute = document.getElementById('mute'), duck = document.getElementById('duck');
+  function settings() { OG.bus.emit('settings:change', { settings: { mute: mute.checked, volume: +vol.value } }); }
+  vol.oninput = settings; mute.onchange = settings;
+  duck.onchange = function () { OG.bus.emit(duck.checked ? 'game:pause' : 'game:resume'); };
+  OG.bus.emit('boot');
+</script>
+</body></html>

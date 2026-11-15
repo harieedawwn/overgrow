@@ -4,7 +4,7 @@
 
   // ---------- tunables ----------
   var CFG = OG.cfg.tree = {
-    xpBase: 3, xpExp: 1.6,
+    xpBase: 3, xpExp: 1.45,
     norm: { fire: 50, wind: 400, root: 5, stone: 2 }, // raw signal -> comparable growth
     shareBoost: 3,        // weight = (1 + shareBoost * share) ^ biasPow
     biasPow: 3,           // sharpens style bias (plain linear 1+3*share cannot reach 60% fire)

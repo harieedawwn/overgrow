@@ -30,19 +30,19 @@
     coreSlamEvery: 4.5, coreSlamRange: 420, slamR: 100, slamTelegraph: 0.8, slamActive: 0.25, slamDmgMul: 1.3,
     motherBurstEvery: [3.6, 2.6, 1.8], motherBurstN: [10, 14, 20],
     motherBurstSpeed: 150, motherBurstR: 9, motherBurstLife: 5, motherBurstDmgMul: 0.5,
-    motherMinionEvery: [1.8, 1.2, 0.8], motherMinionCount: [2, 3, 4], motherSpawnBoost: 0.35,
+    motherMinionEvery: [1.8, 1.2, 0.8], motherMinionCount: [2, 3, 4], motherSpawnBoost: 0.1,
     orbMax: 200, mergeEvery: 0.2, pullStart: 140, pullAccel: 2200, pullMax: 1000, pickupR: 6, healFrac: 0.15,
     bosses: [
       { t: 180, kind: 'core' }, { t: 360, kind: 'core' }, { t: 540, kind: 'core' },
       { t: 720, kind: 'core' }, { t: 900, kind: 'mother' }
     ],
     kinds: {
-      spore:   { r: 8,  hp: 6,    speed: 112, dmg: 6,  xp: 1,  light: 1 },
-      mold:    { r: 13, hp: 20,   speed: 66,  dmg: 10, xp: 2,  light: 2 },
-      brute:   { r: 24, hp: 140,  speed: 42,  dmg: 22, xp: 8,  light: 6 },
-      spitter: { r: 12, hp: 16,   speed: 58,  dmg: 9,  xp: 3,  light: 3 },
-      core:    { r: 40, hp: 300,  speed: 30,  dmg: 28, xp: 40, light: 100 },
-      mother:  { r: 70, hp: 1500, speed: 22,  dmg: 36, xp: 0,  light: 1000 }
+      spore:   { r: 8,  hp: 6,    speed: 112, dmg: 3,  xp: 1,  light: 1 },
+      mold:    { r: 13, hp: 20,   speed: 66,  dmg: 5, xp: 2,  light: 2 },
+      brute:   { r: 24, hp: 140,  speed: 42,  dmg: 11, xp: 8,  light: 6 },
+      spitter: { r: 12, hp: 16,   speed: 58,  dmg: 4,  xp: 3,  light: 3 },
+      core:    { r: 40, hp: 150,  speed: 30,  dmg: 14, xp: 40, light: 100 },
+      mother:  { r: 70, hp: 120,  speed: 22,  dmg: 5, xp: 0,  light: 1000 }
     },
     defStats: {
       dmg: 10, fireRate: 1.6, projSpeed: 420, projCount: 1, pierce: 0, spread: 0.18, moveSpeed: 150,

@@ -3,9 +3,9 @@
   OG.cfg = OG.cfg || {};
   var cfg = OG.cfg.meta = {
     saveVersion: 1,
-    rootsDivisor: 30,          // rootsTotal = floor(sqrt(lifetimeLight / divisor))
+    rootsDivisor: 10,          // rootsTotal = floor(sqrt(lifetimeLight / divisor))
     clearBonus: 0.25,          // extra roots on clear (rounded up)
-    perRootBonus: 0.03,        // xpMul and lightMul per rootsTotal
+    perRootBonus: 0.06,        // xpMul and lightMul per rootsTotal
     offlineMaxSec: 8 * 3600,
     offlineMinSec: 120,
     offlineRate: 0.25,         // fraction of bestLpm earned while away

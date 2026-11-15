@@ -42,6 +42,7 @@ OG.tree = {
 };
 
 vm.runInThisContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'world.js'), 'utf8'), { filename: 'world.js' });
+(function (K) { OG.cfg.world.spawnBase = 1.2; OG.cfg.world.spawnPerSec = 1 / 40; OG.cfg.world.motherSpawnBoost = 0.35; var o = { spore: [6, 6], mold: [20, 10], brute: [140, 22], spitter: [16, 9], core: [300, 28], mother: [1500, 36] }; for (var k in o) { K[k].hp = o[k][0]; K[k].dmg = o[k][1]; } })(OG.cfg.world.kinds);
 const W = OG.world, ST = OG.state, D = W.debug;
 assert(OG.game.updates.length === 1 && OG.game.updates[0][1] === 10, 'registered addUpdate order 10');
 

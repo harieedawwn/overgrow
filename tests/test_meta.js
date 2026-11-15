@@ -25,6 +25,7 @@ function fresh(saved) {
   };
   globalThis.OG = window.OG = OG;
   vm.runInThisContext(SRC, { filename: 'meta.js' });
+  OG.cfg.meta.rootsDivisor = 1000; OG.cfg.meta.perRootBonus = 0.03; // mechanics tests use the original tunables
   let t = T0; OG.meta.now = () => t; OG.setNow = v => { t = v; };
   return { OG, log };
 }

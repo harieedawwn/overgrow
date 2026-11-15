@@ -10,6 +10,7 @@ var OG = globalThis.OG = {
   rng: mulberry
 };
 vm.runInThisContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'tree.js'), 'utf8'), { filename: 'tree.js' });
+OG.cfg.tree.xpBase = 5; OG.cfg.tree.xpExp = 1.6; // mechanics tests use the original tunables
 var T = OG.tree, fails = 0;
 function ok(c, m) { if (!c) { fails++; console.log('FAIL: ' + m); } }
 function fresh(seed, bonus) {
